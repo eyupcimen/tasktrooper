@@ -275,10 +275,18 @@ export function blockedResourceLabel(resource: string): string {
  * read off the front of each segment, up to its first " (".
  */
 export function workOrderBlockerLabel(blockedQuestion: string): string {
-  const trimmed = blockedQuestion.trim();
-  if (!trimmed) {
+  const keys = workOrderBlockerKeys(blockedQuestion);
+  if (keys.length === 0) {
     return blockedResourceLabel("work_order");
   }
+  const [first, ...rest] = keys;
+  return rest.length > 0 ? `${first} +${rest.length}` : first;
+}
+
+/** The blocker task keys of a work_order park, parsed as described above. */
+export function workOrderBlockerKeys(blockedQuestion: string): string[] {
+  const trimmed = blockedQuestion.trim();
+  if (!trimmed) return [];
   const prefix = "waiting for ";
   const suffix = " to finish";
   const start = trimmed.startsWith(prefix) ? prefix.length : 0;
@@ -295,12 +303,7 @@ export function workOrderBlockerLabel(blockedQuestion: string): string {
     if (keyMatch) keys.push(keyMatch[1]);
     cursor = match.index + match[0].length;
   }
-
-  if (keys.length === 0) {
-    return blockedResourceLabel("work_order");
-  }
-  const [first, ...rest] = keys;
-  return rest.length > 0 ? `${first} +${rest.length}` : first;
+  return keys;
 }
 
 /**

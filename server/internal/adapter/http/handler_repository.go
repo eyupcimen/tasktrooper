@@ -32,6 +32,8 @@ func (h *Handler) registerRepositoryRoutes(app fiber.Router) {
 	app.Post("/v1/repositories/:id/restore", h.RestoreRepositoryWorkingCopy)
 	app.Get("/v1/repositories/:id", h.GetRepository)
 	app.Get("/v1/repositories/:id/directories", h.ListRepositoryDirectories)
+	app.Get("/v1/repositories/:id/task-sheets", h.ListTaskSheets)
+	app.Get("/v1/repositories/:id/task-sheets/content", h.GetTaskSheet)
 	app.Patch("/v1/repositories/:id", h.UpdateRepository)
 	app.Delete("/v1/repositories/:id", h.DeleteRepository)
 	app.Put("/v1/repositories/:id/projects", h.SetRepositoryProjects)

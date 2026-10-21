@@ -108,6 +108,8 @@ let servedBase: string | null = null;
 // the network service starts. See services/app-scheme.ts.
 registerAppSchemePrivileges();
 
+let attentionCount = 0;
+
 const shellWindow = new Shell({
   origin: () => APP_ORIGIN,
   onCloudStatus: (status) => broadcast(SHELL_EVENTS.cloudStatus, status),
@@ -355,6 +357,14 @@ const services: IpcServices = {
   },
 
   openExternal: (url) => openExternally(url),
+
+  setAttention: (count) => {
+    app.setBadgeCount(count);
+    if (count > attentionCount && !(shellWindow.window?.isFocused() ?? false)) {
+      app.dock?.bounce("informational");
+    }
+    attentionCount = count;
+  },
 
   reportChatFocus: (focus) => {
     notifications.setFocusedChat(

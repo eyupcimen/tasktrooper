@@ -12,6 +12,7 @@ import {
   type WorkspaceConfig,
 } from "@/api";
 import { CreateTaskDialog } from "@/components/board/CreateTaskDialog";
+import { MoveAllToTodoButton } from "@/components/board/MoveAllToTodoButton";
 import { ProjectScopeSelect } from "@/components/board/ProjectScopeSelect";
 import { TaskDetailDrawer } from "@/components/board/TaskDetailDrawer";
 import { NoRepositoriesNotice } from "@/components/workspace/NoProjectsNotice";
@@ -26,6 +27,8 @@ import { useCachedState, useFirstLoad } from "@/hooks/useCachedState";
 import { useI18n } from "@/hooks/useI18n";
 import { usePolling } from "@/hooks/usePolling";
 import { useProjectScope } from "@/hooks/useProjectScope";
+import { useTaskSheetAutoImport } from "@/hooks/useTaskSheetAutoImport";
+import { resolveLeadAgent } from "@/lib/leadAgent";
 import {
   CACHE_AGENTS,
   CACHE_CONFIG,
@@ -150,6 +153,8 @@ export function BacklogPage() {
   }, [setTasks]);
 
   usePolling(refreshTasks, TASK_POLL_MS, !loading);
+
+  useTaskSheetAutoImport(repositories, agents, load);
 
   const backlogColumnTasks = useMemo(
     () => tasks.filter((task) => task.column === backlogSlug),
@@ -293,6 +298,11 @@ export function BacklogPage() {
                   {t("boardArea.backlog.board")}
                 </Link>
               </Button>
+              <MoveAllToTodoButton
+                tasks={backlogTasks}
+                fallbackAgentId={resolveLeadAgent(agents, null)?.id}
+                onMoved={load}
+              />
               <Button onClick={openTaskCreate} className="gap-2">
                 <Plus className="h-4 w-4" />
                 {t("boardArea.backlog.newTask")}

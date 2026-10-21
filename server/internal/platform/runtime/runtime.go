@@ -1298,6 +1298,7 @@ func (e *engine) buildHandler(ctx context.Context, opts Options) *httpadapter.Ha
 			boardRunner.SetAgentCLIConnections(agentCLISvc)
 		}
 		boardRunner.SetToolchainDetector(localtoolchain.New(cfg.Storage.Sessions.WorkspaceRoot))
+		boardRunner.SetRunTimeLimit(cfg.Board.RunTimeLimit)
 		if workflowSvc != nil {
 			boardRunner.SetWorkflows(workflowSvc)
 			boardRunner.SetRoleResolver(workflowSvc)

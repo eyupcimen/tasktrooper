@@ -54,30 +54,30 @@ export function LeadQuickAsk({ agent }: LeadQuickAskProps) {
   };
 
   return (
-    <form onSubmit={submit} className="relative hidden w-full max-w-md md:block">
-      <AgentAvatar
-        name={agent.name}
-        lead
-        size="xs"
-        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
-      />
-      <Input
-        ref={inputRef}
-        value={text}
-        disabled={busy}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") inputRef.current?.blur();
-        }}
-        aria-label={t("frame.layout.header.leadAsk.label", { name: agent.name })}
-        placeholder={t("frame.layout.header.leadAsk.placeholder")}
-        className="pr-12 pl-10"
-      />
-      {!text && (
-        <kbd className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-micro text-muted-foreground">
-          {t("frame.layout.header.leadAsk.shortcut")}
-        </kbd>
-      )}
+    <form onSubmit={submit} className="hidden w-full max-w-lg items-center gap-2 md:flex">
+      <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-foreground">
+        <AgentAvatar name={agent.name} lead size="xs" />
+        {t("frame.layout.header.leadAsk.title")}
+      </span>
+      <div className="relative min-w-0 flex-1">
+        <Input
+          ref={inputRef}
+          value={text}
+          disabled={busy}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") inputRef.current?.blur();
+          }}
+          aria-label={t("frame.layout.header.leadAsk.label", { name: agent.name })}
+          placeholder={t("frame.layout.header.leadAsk.placeholder")}
+          className="pr-12"
+        />
+        {!text && (
+          <kbd className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border border-border px-1.5 font-mono text-micro text-muted-foreground">
+            {t("frame.layout.header.leadAsk.shortcut")}
+          </kbd>
+        )}
+      </div>
     </form>
   );
 }

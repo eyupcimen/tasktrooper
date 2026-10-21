@@ -104,7 +104,7 @@ export class Shell {
       minWidth: 900,
       minHeight: 600,
       show: false,
-      title: "TaskTrooper",
+      title: "TaskTrooper Eyüp",
       // y:22 centers the traffic lights' own ~12px cluster on the header's
       // 56px (h-14) row — the same vertical center the brand mark and title
       // sit on via that row's own items-center — instead of leaving it to

@@ -131,6 +131,10 @@ mac:
     # the window would look like quitting.
     LSUIElement: false
     NSHumanReadableCopyright: TaskTrooper
+    # Display name only. productName and CFBundleName stay "TaskTrooper":
+    # productName names userData (the database, local.bin) and the keychain
+    # item, and Electron finds its helpers as "<CFBundleName> Helper.app".
+    CFBundleDisplayName: TaskTrooper Eyüp
 
 dmg:
   artifactName: ${productName}-${version}-${arch}.${ext}

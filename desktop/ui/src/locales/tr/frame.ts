@@ -8,8 +8,9 @@ export const frame: FrameDict = {
       lightTheme: "Açık tema",
       darkTheme: "Koyu tema",
       leadAsk: {
+        title: "Product Manager",
         label: "{name} için mesaj",
-        placeholder: "PM'den iste…",
+        placeholder: "Görev, fikir veya soru yaz…",
         shortcut: "⌘K",
         failed: "Sohbet başlatılamadı",
       },

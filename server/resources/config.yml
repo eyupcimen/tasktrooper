@@ -86,6 +86,9 @@ board:
   # or a live pipeline would be given up on before it could answer.
   pipeline_gate_timeout: "45m"
   pipeline_gate_interval: "2m"
+  # Wall-clock cap for one agent run. The agent is told the budget up front;
+  # past it the run is stopped and the task parked on Blocked for a human.
+  run_time_limit: "10m"
 
 context:
   max_tokens: 32000

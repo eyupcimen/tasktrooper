@@ -845,6 +845,14 @@ export interface TestCaseSummary {
   planned: number;
 }
 
+/** A spreadsheet in a repository's working copy whose name marks it as a task list. */
+export interface TaskSheet {
+  path: string;
+  name: string;
+  size: number;
+  modified_at: string;
+}
+
 export interface AcceptanceCriterionInput {
   text: string;
   position?: number;
@@ -3861,6 +3869,21 @@ export const api = {
    * Blob. <img>/<a> tags cannot carry the header, so rendering always goes
    * through this (see useAttachmentBlob) instead of attachmentUrl directly.
    */
+  listTaskSheets: (repositoryId: string) =>
+    request<{ sheets: TaskSheet[] }>(`/v1/repositories/${repositoryId}/task-sheets`),
+
+  fetchTaskSheet: async (repositoryId: string, sheet: TaskSheet) => {
+    const res = await fetchWithTimeout(
+      apiUrl(`/v1/repositories/${repositoryId}/task-sheets/content?path=${encodeURIComponent(sheet.path)}`),
+      { method: "GET", headers: authHeaders() },
+      READ_TIMEOUT_MS,
+    );
+    if (!res.ok) {
+      throw await apiErrorFrom(res);
+    }
+    return new File([await res.blob()], sheet.name);
+  },
+
   fetchAttachmentBlob: async (id: string) => {
     const res = await fetchWithTimeout(attachmentUrl(id), {
       method: "GET",

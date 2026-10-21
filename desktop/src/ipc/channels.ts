@@ -126,6 +126,12 @@ export const CLOUD_CHANNELS = {
   chatReportFocus: "cloud:chat:report-focus",
 
   /**
+   * How many things on the board need the person: the Dock badge shows it,
+   * and a rise while the window is in the background bounces the Dock icon.
+   */
+  attention: "cloud:attention:set",
+
+  /**
    * The environment preflight — what this Mac can and cannot do, item by item,
    * with the sentence that fixes each one.
    *

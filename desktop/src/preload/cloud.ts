@@ -88,6 +88,7 @@ const runner: DesktopRunnerHost = {
     call<string | null>(CLOUD_CHANNELS.chooseDirectory, options),
   reveal: (what) => call<void>(CLOUD_CHANNELS.reveal, { what }),
   openExternal: (url) => call<boolean>(CLOUD_CHANNELS.openExternal, { url }),
+  setAttention: (count) => call<void>(CLOUD_CHANNELS.attention, { count }),
   reportChatFocus: (focus) =>
     call<void>(CLOUD_CHANNELS.chatReportFocus, {
       agentId: focus?.agentId ?? null,

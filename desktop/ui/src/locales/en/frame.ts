@@ -7,8 +7,9 @@ export const frame = {
       lightTheme: "Light theme",
       darkTheme: "Dark theme",
       leadAsk: {
+        title: "Product Manager",
         label: "Message {name}",
-        placeholder: "Ask the PM…",
+        placeholder: "Ask for a task, an idea or a question…",
         shortcut: "⌘K",
         failed: "Couldn't start a conversation",
       },

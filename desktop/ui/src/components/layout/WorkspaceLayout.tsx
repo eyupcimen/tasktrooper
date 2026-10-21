@@ -4,6 +4,7 @@ import { api, type Agent, type WorkspaceConfig } from "@/api";
 import { WorkspaceShell } from "@/components/layout/WorkspaceShell";
 import { useCachedState, useFirstLoad } from "@/hooks/useCachedState";
 import type { WorkspaceOutletContext } from "@/hooks/useWorkspaceOutlet";
+import { AttentionBanner } from "@/components/layout/AttentionBanner";
 import { resolveLeadAgent } from "@/lib/leadAgent";
 import { CACHE_CONFIG } from "@/lib/project-board";
 import { cn } from "@/lib/utils";
@@ -125,6 +126,7 @@ export function WorkspaceLayout() {
       onRefresh={load}
     >
       <div className={cn("flex min-h-0 flex-1 flex-col", fullBleed ? "h-full overflow-hidden" : "")}>
+        <AttentionBanner />
         <Outlet context={outletContext} />
       </div>
     </WorkspaceShell>

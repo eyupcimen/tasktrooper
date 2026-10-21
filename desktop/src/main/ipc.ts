@@ -22,6 +22,7 @@ import {
   validateChooseDirectory,
   validateDiagnosticsRequest,
   validateLogsRequest,
+  validateAttention,
   validateOpenExternal,
   validateOverrides,
   validatePreferences,
@@ -90,6 +91,7 @@ export interface IpcServices {
   chooseDirectory(options?: ChooseDirectoryRequest): Promise<string | null>;
   reveal(what: "workspace" | "previous-workspace" | "logs"): void;
   openExternal(url: string): boolean;
+  setAttention(count: number): void;
   reportChatFocus(focus: { agentId: string | null; sessionId: string | null }): void;
 
   preflight(force: boolean): Promise<PreflightReport>;
@@ -224,6 +226,9 @@ export function registerIpc(services: IpcServices, guard: SenderGuard): void {
     services.reveal(validateReveal(payload).what);
   });
   cloud(CLOUD_CHANNELS.openExternal, (payload) => services.openExternal(validateOpenExternal(payload).url));
+  cloud(CLOUD_CHANNELS.attention, (payload) => {
+    services.setAttention(validateAttention(payload).count);
+  });
   cloud(CLOUD_CHANNELS.chatReportFocus, (payload) => {
     services.reportChatFocus(validateChatFocus(payload));
   });

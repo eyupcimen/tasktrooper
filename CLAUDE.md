@@ -1,5 +1,7 @@
 # TaskTrooper — monorepo
 
+> Kişisel sürüm: önce `OTURUM_GUNLUGU.md` dosyasını oku (yapılanlar, derleme/kurulum, açık kararlar). Commit/push yok.
+
 Three parts, one product: the macOS desktop app. Read the directory's own
 `CLAUDE.md` before working in it.
 

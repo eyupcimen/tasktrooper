@@ -282,6 +282,9 @@ export interface DesktopRunnerHost {
    */
   openExternal(url: string): Promise<boolean>;
 
+  /** Dock badge with this count; a rise while the window is unfocused bounces the icon. Absent on older shells. */
+  setAttention?(count: number): Promise<void>;
+
   diagnostics(force?: boolean): Promise<DesktopDiagnostics>;
   setOverrides(patch: DesktopOverrides): Promise<DesktopDiagnostics>;
 

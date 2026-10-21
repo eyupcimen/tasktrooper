@@ -88,6 +88,9 @@ func applyDefaults(cfg *domain.Config) {
 	if cfg.Board.PipelineGateInterval <= 0 {
 		cfg.Board.PipelineGateInterval = 2 * time.Minute
 	}
+	if cfg.Board.RunTimeLimit <= 0 {
+		cfg.Board.RunTimeLimit = 10 * time.Minute
+	}
 	if cfg.RAG.ChunkSize <= 0 {
 		cfg.RAG.ChunkSize = 1000
 	}

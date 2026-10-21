@@ -1,6 +1,7 @@
 import {
   Activity,
   Bot,
+  Check,
   Clock,
   FolderKanban,
   GripVertical,
@@ -26,8 +27,12 @@ import {
   type TaskTypeWorkflow,
   type WorkspaceConfig,
 } from "@/api";
+import { AwaitingYouStrip } from "@/components/board/AwaitingYouStrip";
+import { BoardStatusPanel } from "@/components/board/BoardStatusPanel";
 import { BoardLane } from "@/components/board/BoardLane";
 import { CreateTaskDialog } from "@/components/board/CreateTaskDialog";
+import { ImportTasksButton } from "@/components/board/ImportTasksButton";
+import { MoveAllToTodoButton } from "@/components/board/MoveAllToTodoButton";
 import { ProjectScopeSelect } from "@/components/board/ProjectScopeSelect";
 import { TaskDetailDrawer } from "@/components/board/TaskDetailDrawer";
 import { NoRepositoriesNotice } from "@/components/workspace/NoProjectsNotice";
@@ -43,6 +48,8 @@ import { useCachedState, useFirstLoad } from "@/hooks/useCachedState";
 import { tStatic, useI18n } from "@/hooks/useI18n";
 import { usePolling } from "@/hooks/usePolling";
 import { useProjectScope } from "@/hooks/useProjectScope";
+import { useTaskSheetAutoImport } from "@/hooks/useTaskSheetAutoImport";
+import { resolveLeadAgent } from "@/lib/leadAgent";
 import { analysisReviewPath } from "@/lib/analysis-review";
 import {
   CACHE_AGENTS,
@@ -363,6 +370,36 @@ export function BoardPage() {
     [boardColumnTasks, scope, repositories],
   );
 
+  useTaskSheetAutoImport(repositories, agents, load);
+
+  const leadAgentId = useMemo(() => resolveLeadAgent(agents, null)?.id, [agents]);
+
+  const restartTask = async (task: BoardTask) => {
+    try {
+      const { runs } = await api.listTaskAgentRuns(task.repository_id, task.id);
+      const latest = runs?.[0];
+      if (!latest) {
+        toast.info(t("boardArea.status.restartNoRun", { key: task.key }));
+        return;
+      }
+      await api.rerunTaskAgentRun(task.repository_id, task.id, latest.id);
+      toast.success(t("boardArea.status.restarted", { key: task.key }));
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("boardArea.status.restartFailed"));
+    }
+  };
+
+  const backlogTasks = useMemo(
+    () =>
+      filterTasksByScope(
+        tasks.filter((task) => task.column === "backlog"),
+        scope,
+        repositories,
+      ).sort((a, b) => a.position - b.position),
+    [tasks, scope, repositories],
+  );
+
   const boardTasks = useMemo(() => {
     const grouped: Record<string, BoardTask[]> = {};
     for (const col of board) grouped[col.slug] = [];
@@ -667,6 +704,21 @@ export function BoardPage() {
                     <pipelineIcon.Icon className={cn("h-3.5 w-3.5", pipelineIcon.className)} />
                   </span>
                 )}
+                {(task.column === "analiz_review" || task.column === "human_uat") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-micro"
+                    title={t("boardArea.components.taskDetail.analizReviewApprove")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void moveTask(task, "done");
+                    }}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    {t("boardArea.components.taskDetail.analizReviewApprove")}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -727,6 +779,15 @@ export function BoardPage() {
                   {t("boardArea.board.backlog")}
                 </Link>
               </Button>
+              <MoveAllToTodoButton tasks={backlogTasks} fallbackAgentId={leadAgentId} onMoved={load} />
+              <ImportTasksButton
+                agents={agents}
+                existingTitles={tasks.map((task) => task.title)}
+                fallbackAgentId={leadAgentId}
+                repositoryId={createDefaults.repositoryId || repositories[0]?.id}
+                initiativeProjectId={createDefaults.initiativeProjectId}
+                onImported={load}
+              />
               <Button onClick={openTaskCreate} className="gap-2">
                 <Plus className="h-4 w-4" />
                 {t("boardArea.board.newTask")}
@@ -740,6 +801,26 @@ export function BoardPage() {
         {repositories.length === 0 && (
           <NoRepositoriesNotice className="mb-4 border-amber-500/30 bg-amber-500/5 p-4" />
         )}
+        <BoardStatusPanel
+          tasks={filterTasksByScope(tasks, scope, repositories)}
+          columns={allColumns}
+          activeTaskIds={activeAgentTaskIds}
+          onOpen={openTask}
+          onRestart={(task) => void restartTask(task)}
+          onMoveToTodo={(task) =>
+            void (task.assignee_agent_id || !leadAgentId
+              ? moveTask(task, "todo")
+              : api
+                  .updateRepositoryTask(task.repository_id, task.id, { column: "todo", assignee_agent_id: leadAgentId })
+                  .then(load, (e) => toast.error(e instanceof Error ? e.message : t("boardArea.board.moveFailed"))))
+          }
+        />
+        <AwaitingYouStrip
+          tasks={scopedTasks}
+          columns={allColumns}
+          onOpen={openTask}
+          onApprove={(task) => void moveTask(task, "done")}
+        />
         {scope !== PROJECT_SCOPE_ALL && scopedTasks.length === 0 ? (
           <Card className="border-dashed">
             <EmptyState

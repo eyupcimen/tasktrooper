@@ -159,3 +159,8 @@ var handoffCodeReviewRefusedKey = prompt.Define("guard.handoff_code_review_refus
 var handoffAnalizReviewRefusedKey = prompt.Define("guard.handoff_analiz_review_refused", handoffReasonInput{Reason: "x"})
 var handoffCodeReviewRefusedRevisionKey = prompt.Define("guard.handoff_code_review_refused_revision", handoffReasonInput{Reason: "x"})
 var handoffAnalizReviewRefusedRevisionKey = prompt.Define("guard.handoff_analiz_review_refused_revision", handoffReasonInput{Reason: "x"})
+
+type timeLimitInput struct{ Minutes int }
+
+var timeBudgetKey = prompt.Define("board.time_budget", timeLimitInput{Minutes: 10})
+var timeLimitParkDetailKey = prompt.Define("board.time_limit_park_detail", timeLimitInput{Minutes: 10})

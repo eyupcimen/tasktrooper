@@ -154,6 +154,9 @@ export interface DesktopRunnerHost {
    */
   openExternal(url: string): Promise<boolean>;
 
+  /** Dock badge with this count; a rise while the window is unfocused bounces the icon. */
+  setAttention(count: number): Promise<void>;
+
   /**
    * Tells the shell which agent-chat session, if any, is on screen — the main
    * process cannot render a screen itself, so it needs this to decide whether

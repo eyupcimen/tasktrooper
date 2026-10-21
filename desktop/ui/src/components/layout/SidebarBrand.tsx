@@ -20,7 +20,7 @@ export function SidebarBrand({ collapsed = false, className }: SidebarBrandProps
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-mark text-primary-foreground">
         <Logo className="h-4 w-4" />
       </div>
-      <p className="truncate text-body font-semibold text-sidebar-accent-foreground">TaskTrooper</p>
+      <p className="truncate text-body font-semibold text-sidebar-accent-foreground">TaskTrooper Eyüp</p>
     </div>
   );
 }

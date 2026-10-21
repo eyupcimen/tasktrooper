@@ -167,6 +167,10 @@ type BoardConfig struct {
 	// delivery, CI out of minutes), which left cards in code_review forever.
 	PipelineGateTimeout  time.Duration `koanf:"pipeline_gate_timeout"`
 	PipelineGateInterval time.Duration `koanf:"pipeline_gate_interval"`
+	// RunTimeLimit caps one agent run's wall clock. A run past it is stopped
+	// and its task parked on Blocked for a human, instead of a CLI that hit a
+	// limit or looped sitting on the card for hours.
+	RunTimeLimit time.Duration `koanf:"run_time_limit"`
 }
 
 type LLMConfig struct {

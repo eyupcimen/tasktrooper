@@ -110,6 +110,15 @@ export function validateReveal(raw: unknown): RevealRequest {
  * actually a link the OS should open is `openExternally`'s call in
  * `main/window.ts`, the one place that decision is made.
  */
+export function validateAttention(raw: unknown): { count: number } {
+  const o = asRecord(raw, "attention");
+  const count = o.count;
+  if (typeof count !== "number" || !Number.isInteger(count) || count < 0 || count > 999) {
+    throw new Error("attention.count must be an integer between 0 and 999");
+  }
+  return { count };
+}
+
 export function validateOpenExternal(raw: unknown): OpenExternalRequest {
   const o = asRecord(raw, "openExternal");
   return { url: asCleanNonEmpty(o.url, "openExternal.url") };

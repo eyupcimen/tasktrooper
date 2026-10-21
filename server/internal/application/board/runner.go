@@ -138,6 +138,9 @@ type PullRequestReader interface {
 func (r *Runner) SetPullRequestReader(reader PullRequestReader) { r.prReader = reader }
 
 func (r *Runner) SetWorkflows(w port.WorkflowReader)   { r.workflows = w }
+
+// SetRunTimeLimit caps each agent run; zero leaves runs unbounded.
+func (r *Runner) SetRunTimeLimit(d time.Duration) { r.runTimeLimit = d }
 func (r *Runner) SetRoleResolver(rr port.RoleResolver) { r.roles = rr }
 
 func (r *Runner) workflowFor(ctx context.Context, taskType domain.TaskType) domain.Workflow {
@@ -154,6 +157,7 @@ func (r *Runner) workflowFor(ctx context.Context, taskType domain.TaskType) doma
 }
 
 type Runner struct {
+	runTimeLimit      time.Duration
 	agentLoop         agent.Runner
 	executor          port.TaskExecutor
 	orchSvc           *orchestrator.Service
@@ -885,6 +889,9 @@ func (r *Runner) execute(parent, ctx context.Context, cancel context.CancelFunc,
 	criteriaItems := r.criteriaForRun(runCtx, job, wf)
 	changedSinceVerdict := r.changedSinceByVerifiedSHA(runCtx, workDir, criteriaItems)
 	triggerMsg := buildTriggerMessage(job, wf, criteriaItems, changedSinceVerdict)
+	if r.runTimeLimit > 0 {
+		triggerMsg += "\n\n" + timeBudgetKey.Render(timeLimitInput{Minutes: int(r.runTimeLimit.Minutes())})
+	}
 
 	var scoreMsg, kpiMsg, memMsg, diffMsg, prMsg, pipelineMsg, revisionMsg, reviewMsg, clarificationsMsg, prevFailuresMsg, analysisMsg, questionsMsg string
 
@@ -1038,6 +1045,9 @@ func (r *Runner) execute(parent, ctx context.Context, cancel context.CancelFunc,
 	var resp domain.AgentResponse
 	cliSession := &agent.CLISession{}
 	runCtx = agent.ContextWithCLISession(runCtx, cliSession)
+	limitedCtx, stopLimit := r.withRunTimeLimit(runCtx)
+	execCtx := runCtx
+	runCtx = limitedCtx
 	switch {
 	case domain.RequiresHostExecutor(agentRec.ProviderType):
 		if r.executor == nil || !r.executor.Supports(agentRec.ProviderType) {
@@ -1070,12 +1080,18 @@ func (r *Runner) execute(parent, ctx context.Context, cancel context.CancelFunc,
 		resp, err = r.agentLoop.RunTask(runCtx, history, model, agentRec.ProviderType, upliftedPolicy,
 			agent.WithLightModel(agentRec.Model), agent.WithSessionLimits(agentRec.MaxTurns, agentRec.Effort))
 	}
+	runCtx = execCtx
+	timedOut := errors.Is(limitedCtx.Err(), context.DeadlineExceeded)
+	stopLimit()
 	stampToolStats(&run, toolUsage)
 	stampTokenUsage(&run, tokenUsage)
 	if stopRequested(parent, runCtx) {
 		log.Info().Str("run_id", run.ID.String()).Str("task_id", job.Task.ID.String()).
 			Msg("board run stopped, leaving the task as it stands")
 		return nil
+	}
+	if timedOut {
+		return r.parkOnTimeLimit(ctx, job, run)
 	}
 	if err != nil {
 		var quotaErr *domain.QuotaBlock
@@ -1205,6 +1221,38 @@ func (r *Runner) execute(parent, ctx context.Context, cancel context.CancelFunc,
 	defer cancelPersist()
 	_, err = r.runs.Update(pctx, run)
 	return err
+}
+
+func (r *Runner) withRunTimeLimit(ctx context.Context) (context.Context, context.CancelFunc) {
+	if r.runTimeLimit <= 0 {
+		return context.WithCancel(ctx)
+	}
+	return context.WithTimeout(ctx, r.runTimeLimit)
+}
+
+// parkOnTimeLimit ends a run that outlived run_time_limit. The workspace keeps
+// whatever the agent wrote, so a re-run (or dragging the card back) continues
+// from there; until then the card waits on Blocked with the reason on it.
+func (r *Runner) parkOnTimeLimit(ctx context.Context, job RunJob, run domain.TaskAgentRun) error {
+	detail := timeLimitParkDetailKey.Render(timeLimitInput{Minutes: int(r.runTimeLimit.Minutes())})
+	run.Status = domain.TaskAgentRunStatusFailed
+	run.Summary = detail
+	pctx, cancel := persistCtx(ctx)
+	defer cancel()
+	if _, err := r.runs.Update(pctx, run); err != nil && !errors.Is(err, domain.ErrTaskAgentRunNotFound) {
+		log.Warn().Err(err).Str("run_id", run.ID.String()).Msg("recording a timed-out run failed")
+	}
+	if r.blocker == nil {
+		return nil
+	}
+	previous, err := r.blocker.BlockOnResource(pctx, job.RepositoryID, job.Task.ID, domain.ResourceHumanDecision, detail)
+	if err != nil {
+		log.Warn().Err(err).Str("task_id", job.Task.ID.String()).Msg("parking a timed-out task failed")
+		return nil
+	}
+	r.parks.Record(pctx, job.RepositoryID, job.Task, previous, domain.ResourceHumanDecision, domain.MoveReasonResourceBlocked)
+	log.Info().Str("task_id", job.Task.ID.String()).Dur("limit", r.runTimeLimit).Msg("run hit its time limit; task parked")
+	return nil
 }
 
 func (r *Runner) parkOnResource(ctx context.Context, job RunJob, agentRec domain.Agent, resp domain.AgentResponse) {
